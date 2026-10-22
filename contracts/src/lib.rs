@@ -1010,6 +1010,8 @@ impl StellarBountyBoardContract {
     /// * [`ContractError::MaintainerMismatch`] - If `maintainer` does not match the bounty's registered creator (`bounty.maintainer != maintainer`).
     /// * [`ContractError::BountyAlreadyFinalized`] - If the bounty status is already [`BountyStatus::Released`] or [`BountyStatus::Refunded`].
     /// * [`ContractError::BountyNotExpiredYet`] - If the current ledger timestamp is less than or equal to `bounty.deadline` (and `bounty.deadline != 0`).
+    /// * A `deadline` of `0` is treated as a sentinel meaning "no deadline":
+    ///   the expiry check is skipped and the refund proceeds regardless of `now`.
     ///
     /// # Storage
     /// * **Read**:
