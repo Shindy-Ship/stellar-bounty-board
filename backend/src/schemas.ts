@@ -51,4 +51,19 @@ export const createBountySchema = z.object({
   urgency: z.enum(["low", "medium", "high"]).optional(),
 });
 
+// ---------------------------------------------------------------------------
+// Bounty refund schema — POST /api/bounties/:id/refund
+// ---------------------------------------------------------------------------
+
+/** Path params: the bounty id must be a non-empty string of safe characters */
+export const refundBountyParamsSchema = z.object({
+  id: z
+    .string()
+    .min(1, "id must not be empty")
+    .max(64, "id must be at most 64 characters")
+    .regex(/^[A-Za-z0-9_-]+$/, "id contains invalid characters"),
+});
+
+export type RefundBountyParams = z.infer<typeof refundBountyParamsSchema>;
+
 export type CreateBountyInput = z.infer<typeof createBountySchema>;

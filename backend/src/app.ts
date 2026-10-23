@@ -1393,7 +1393,27 @@ app.post(
   enforceBodyLimit(DEFAULT_BODY_LIMIT),
   idempotencyMiddleware,
   createStellarSignatureAuthMiddleware(),
-  validateBody(maintainerActionSchema),
+  (req: Request, res: Response, next: NextFunction) => {
+    const parsed = refundBountyRequestSchema.safeParse({
+      params: req.params,
+      query: req.query,
+      body: req.body,
+    });
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: `INVALID_INPUT: ${zodErrorMessage(parsed.error)}`,
+        code: 'BOUNTY_REFUND_INVALID_INPUT',
+        details: parsed.error.issues,
+        requestId: req.requestId,
+      });
+      return;
+    }
+
+    req.params.id = parsed.data.params.id;
+    req.body = parsed.data.body;
+    next();
+  },
   async (req: Request, res: Response) => {
     try {
       const bounty = await refundBounty(
@@ -1401,7 +1421,6 @@ app.post(
         req.body.maintainer,
         req.body.transactionHash
       );
-
       res.json({ data: bounty });
     } catch (error) {
       sendError(res, req, error);
