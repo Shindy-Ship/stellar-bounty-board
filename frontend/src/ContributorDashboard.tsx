@@ -104,7 +104,11 @@ export default function ContributorDashboard({
           {isConnected && address ? (
             <>
               <span className="wallet-chip">{shortAddress(address)}</span>
-              <button type="button" className="ghost-button" onClick={() => setShowDisconnectModal(true)}>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => setShowDisconnectModal(true)}
+              >
                 Disconnect
               </button>
             </>
@@ -117,7 +121,10 @@ export default function ContributorDashboard({
       </header>
 
       {isConnected && (
-        <section className="metrics contributor-dashboard__metrics" aria-label="Contributor metrics">
+        <section
+          className="metrics contributor-dashboard__metrics"
+          aria-label="Contributor metrics"
+        >
           <div>
             <span className="meta-label">Released earnings</span>
             <strong>{releasedTotal || '0'}</strong>
@@ -134,18 +141,34 @@ export default function ContributorDashboard({
       )}
 
       {loading && !isConnected ? (
-        <div className="contributor-dashboard__state contributor-dashboard__state--loading" role="status" aria-live="polite" data-testid="dashboard-loading">
+        <div
+          className="contributor-dashboard__state contributor-dashboard__state--loading"
+          role="status"
+          aria-live="polite"
+          data-testid="dashboard-loading"
+        >
           Loading bounties...
         </div>
       ) : fetchError && bountiesProp === undefined ? (
-        <div className="contributor-dashboard__state contributor-dashboard__state--error" role="alert" data-testid="dashboard-error">
+        <div
+          className="contributor-dashboard__state contributor-dashboard__state--error"
+          role="alert"
+          data-testid="dashboard-error"
+        >
           <p>Something went wrong loading bounties: {fetchError}</p>
-          <button type="button" className="ghost-button" onClick={() => setReloadToken((token) => token + 1)}>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => setReloadToken((token) => token + 1)}
+          >
             Retry
           </button>
         </div>
       ) : !loading && bounties.length === 0 ? (
-        <div className="contributor-dashboard__state contributor-dashboard__state--empty" data-testid="dashboard-empty">
+        <div
+          className="contributor-dashboard__state contributor-dashboard__state--empty"
+          data-testid="dashboard-empty"
+        >
           No bounties available yet. Check back soon.
         </div>
       ) : (

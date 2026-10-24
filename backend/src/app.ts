@@ -253,6 +253,42 @@ export const submitLimiter = rateLimit({
 });
 
 /**
+ * Route-specific explicit rate limiter for POST /api/bounties/:id/reserve (#1201).
+ *
+ * Cost justification:
+ * Reserving a bounty is a state-changing, unauthenticated write that:
+ * 1. Acquires the global store lock, serializing it against every other writer, and
+ *    rewrites the persistent JSON store on each call.
+ * 2. Transitions bounty state ('open' -> 'reserved'), bumps the optimistic-concurrency
+ *    version, and appends an immutable audit-log entry.
+ * 3. Invalidates the platform-wide bounty cache and dispatches a maintainer notification.
+ *
+ * A contributor reserves a bounty at most once before submitting work; legitimate callers
+ * do not invoke this endpoint in high-frequency bursts. An explicit ceiling of 10 requests
+ * per minute (configurable via RATE_LIMIT_RESERVE_MAX and RATE_LIMIT_RESERVE_WINDOW_MS)
+ * matches the sibling unauthenticated write routes (submit/release/refund) and protects the
+ * store lock, persistence layer, and notification fan-out from write spam.
+ *
+ * When the limit is exceeded, HTTP 429 is returned with an explicit Retry-After header.
+ */
+export const reserveLimiter = rateLimit({
+  windowMs: appConfig.rateLimitReserveWindowMs,
+  max: appConfig.rateLimitReserveMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test' && process.env.RATE_LIMIT_TEST_MODE !== 'true',
+  handler: (req: Request, res: Response) => {
+    const retryAfter = Math.ceil(appConfig.rateLimitReserveWindowMs / 1000);
+    res.setHeader('Retry-After', String(retryAfter));
+    res.status(429).json({
+      error: 'Too many bounty reservation attempts. Please try again later.',
+      retryAfter,
+      requestId: req.requestId,
+    });
+  },
+});
+
+/**
  * Route-specific explicit rate limiter for POST /api/bounties/:id/refund (#1213).
  *
  * Cost justification:
@@ -1249,7 +1285,7 @@ app.post(
 
 app.post(
   '/api/bounties/:id/reserve',
-  mutationLimiter,
+  reserveLimiter,
   enforceBodyLimit(DEFAULT_BODY_LIMIT),
   requireJsonContentType,
   (req: Request, res: Response, next: NextFunction) => {

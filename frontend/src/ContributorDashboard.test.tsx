@@ -123,7 +123,9 @@ describe('ContributorDashboard', () => {
 
     await user.click(screen.getAllByRole('button', { name: /connect wallet/i })[0]!);
 
-    expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('Freighter wallet is not installed'));
+    expect(alertSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Freighter wallet is not installed')
+    );
   });
 });
 

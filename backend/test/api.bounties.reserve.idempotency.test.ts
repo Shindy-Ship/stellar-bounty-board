@@ -21,8 +21,14 @@ describe('POST /api/bounties/:id/reserve idempotency', () => {
   });
 
   it('executes the reservation exactly once for a duplicated request', async () => {
-    const a = await request(app).post(`/api/bounties/${id}/reserve`).set('Idempotency-Key', 'r1').send(body);
-    const b = await request(app).post(`/api/bounties/${id}/reserve`).set('Idempotency-Key', 'r1').send(body);
+    const a = await request(app)
+      .post(`/api/bounties/${id}/reserve`)
+      .set('Idempotency-Key', 'r1')
+      .send(body);
+    const b = await request(app)
+      .post(`/api/bounties/${id}/reserve`)
+      .set('Idempotency-Key', 'r1')
+      .send(body);
 
     expect(a.status).toBe(200);
     expect(reserveBounty).toHaveBeenCalledTimes(1);
