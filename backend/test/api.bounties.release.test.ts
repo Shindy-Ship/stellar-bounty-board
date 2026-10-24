@@ -26,7 +26,7 @@ describe('POST /api/bounties/:id/release — integration test', () => {
   it('does not re-execute the release effect on a duplicated idempotent request', async () => {
     const idempotencyKey = 'test-idempotency-key-release-1';
     const payload = {
-      maintainer: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
+      maintainer: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
     };
 
     const first = await request(app)
