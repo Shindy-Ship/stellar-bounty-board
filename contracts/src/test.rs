@@ -219,7 +219,7 @@ fn test_set_min_bounty_amount_success() {
 }
 
 #[test]
-#[should_panic(expected = "InvalidAmount")]
+#[should_panic(expected = "Error(Contract, #11)")]
 fn test_set_min_bounty_amount_zero_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -229,7 +229,7 @@ fn test_set_min_bounty_amount_zero_fails() {
 }
 
 #[test]
-#[should_panic(expected = "InvalidAmount")]
+#[should_panic(expected = "Error(Contract, #11)")]
 fn test_set_min_bounty_amount_above_max_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -239,7 +239,7 @@ fn test_set_min_bounty_amount_above_max_fails() {
 }
 
 #[test]
-#[should_panic(expected = "AmountTooSmall")]
+#[should_panic(expected = "Error(Contract, #12)")]
 fn test_create_bounty_below_minimum_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -315,7 +315,7 @@ fn test_create_bounty_above_minimum_succeeds() {
 }
 
 #[test]
-#[should_panic(expected = "AmountTooSmall")]
+#[should_panic(expected = "Error(Contract, #12)")]
 fn test_create_bounty_after_raising_minimum_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -413,7 +413,7 @@ fn test_create_bounty() {
 }
 
 #[test]
-#[should_panic(expected = "InvalidAmount")]
+#[should_panic(expected = "Error(Contract, #11)")]
 fn test_create_bounty_negative_amount() {
     let env = Env::default();
     env.mock_all_auths();
@@ -433,7 +433,7 @@ fn test_create_bounty_negative_amount() {
 }
 
 #[test]
-#[should_panic(expected = "DeadlineMustBeInTheFuture")]
+#[should_panic(expected = "Error(Contract, #13)")]
 fn test_create_bounty_past_deadline() {
     let env = Env::default();
     env.mock_all_auths();
@@ -748,7 +748,7 @@ fn test_full_lifecycle() {
 }
 
 #[test]
-#[should_panic(expected = "BountyNotExpiredYet")]
+#[should_panic(expected = "Error(Contract, #21)")]
 fn test_refund_reserved_before_deadline_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -854,7 +854,7 @@ fn test_cancel_bounty_success() {
 }
 
 #[test]
-#[should_panic(expected = "MaintainerMismatch")]
+#[should_panic(expected = "Error(Contract, #25)")]
 fn test_cancel_bounty_wrong_maintainer() {
     let env = Env::default();
     env.mock_all_auths();
@@ -880,16 +880,10 @@ fn test_cancel_bounty_wrong_maintainer() {
     client.cancel_bounty(&bounty_id, &other_maintainer);
 }
 
-invalid_transition_test!(cancel_reserved, BountyStatus::Reserved, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     maintainer: Address,
-     _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
-});
 invalid_transition_test!(
-    cancel_submitted,
-    BountyStatus::Submitted,
-    "BountyNotOpen",
+    cancel_reserved,
+    BountyStatus::Reserved,
+    "Error(Contract, #1)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -897,41 +891,66 @@ invalid_transition_test!(
          _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
     }
 );
-invalid_transition_test!(cancel_released, BountyStatus::Released, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     maintainer: Address,
-     _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
-});
-invalid_transition_test!(cancel_refunded, BountyStatus::Refunded, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     maintainer: Address,
-     _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
-});
-invalid_transition_test!(cancel_expired, BountyStatus::Expired, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     maintainer: Address,
-     _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
-});
-invalid_transition_test!(cancel_disputed, BountyStatus::Disputed, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     maintainer: Address,
-     _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
-});
-
-invalid_transition_test!(reserve_reserved, BountyStatus::Reserved, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     _maintainer: Address,
-     contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
-});
 invalid_transition_test!(
-    reserve_submitted,
+    cancel_submitted,
     BountyStatus::Submitted,
-    "BountyNotOpen",
+    "Error(Contract, #1)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         maintainer: Address,
+         _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
+    }
+);
+invalid_transition_test!(
+    cancel_released,
+    BountyStatus::Released,
+    "Error(Contract, #1)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         maintainer: Address,
+         _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
+    }
+);
+invalid_transition_test!(
+    cancel_refunded,
+    BountyStatus::Refunded,
+    "Error(Contract, #1)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         maintainer: Address,
+         _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
+    }
+);
+invalid_transition_test!(
+    cancel_expired,
+    BountyStatus::Expired,
+    "Error(Contract, #1)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         maintainer: Address,
+         _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
+    }
+);
+invalid_transition_test!(
+    cancel_disputed,
+    BountyStatus::Disputed,
+    "Error(Contract, #1)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         maintainer: Address,
+         _contributor: Address| { client.cancel_bounty(&bounty_id, &maintainer) }
+    }
+);
+
+invalid_transition_test!(
+    reserve_reserved,
+    BountyStatus::Reserved,
+    "Error(Contract, #3)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -939,32 +958,63 @@ invalid_transition_test!(
          contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
     }
 );
-invalid_transition_test!(reserve_released, BountyStatus::Released, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     _maintainer: Address,
-     contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
-});
-invalid_transition_test!(reserve_refunded, BountyStatus::Refunded, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     _maintainer: Address,
-     contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
-});
-invalid_transition_test!(reserve_expired, BountyStatus::Expired, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     _maintainer: Address,
-     contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
-});
-invalid_transition_test!(reserve_disputed, BountyStatus::Disputed, "BountyNotOpen", {
-    |client: &StellarBountyBoardContractClient<'static>,
-     bounty_id: u64,
-     _maintainer: Address,
-     contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
-});
+invalid_transition_test!(
+    reserve_submitted,
+    BountyStatus::Submitted,
+    "Error(Contract, #1)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         _maintainer: Address,
+         contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
+    }
+);
+invalid_transition_test!(
+    reserve_released,
+    BountyStatus::Released,
+    "Error(Contract, #1)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         _maintainer: Address,
+         contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
+    }
+);
+invalid_transition_test!(
+    reserve_refunded,
+    BountyStatus::Refunded,
+    "Error(Contract, #1)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         _maintainer: Address,
+         contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
+    }
+);
+invalid_transition_test!(
+    reserve_expired,
+    BountyStatus::Expired,
+    "Error(Contract, #22)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         _maintainer: Address,
+         contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
+    }
+);
+invalid_transition_test!(
+    reserve_disputed,
+    BountyStatus::Disputed,
+    "Error(Contract, #1)",
+    {
+        |client: &StellarBountyBoardContractClient<'static>,
+         bounty_id: u64,
+         _maintainer: Address,
+         contributor: Address| { client.reserve_bounty(&bounty_id, &contributor) }
+    }
+);
 
-invalid_transition_test!(submit_open, BountyStatus::Open, "BountyMustBeReserved", {
+invalid_transition_test!(submit_open, BountyStatus::Open, "Error(Contract, #19)", {
     |client: &StellarBountyBoardContractClient<'static>,
      bounty_id: u64,
      _maintainer: Address,
@@ -973,7 +1023,7 @@ invalid_transition_test!(submit_open, BountyStatus::Open, "BountyMustBeReserved"
 invalid_transition_test!(
     submit_submitted,
     BountyStatus::Submitted,
-    "BountyMustBeReserved",
+    "Error(Contract, #19)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -984,7 +1034,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     submit_released,
     BountyStatus::Released,
-    "BountyMustBeReserved",
+    "Error(Contract, #19)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -995,7 +1045,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     submit_refunded,
     BountyStatus::Refunded,
-    "BountyMustBeReserved",
+    "Error(Contract, #19)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1006,7 +1056,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     submit_expired,
     BountyStatus::Expired,
-    "BountyMustBeReserved",
+    "Error(Contract, #22)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1017,7 +1067,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     submit_disputed,
     BountyStatus::Disputed,
-    "BountyMustBeReserved",
+    "Error(Contract, #19)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1101,7 +1151,7 @@ fn test_submit_bounty_boundaries() {
             bounty_id_override: None,
             use_wrong_contributor: false,
             expire_before_submit: false,
-            expected: SubmitBountyExpected::Error(ContractError::BountyMustBeReserved),
+            expected: SubmitBountyExpected::Error(ContractError::BountyExpired),
         },
         SubmitBountyTestCase {
             name: "bounty in Disputed status",
@@ -1117,7 +1167,7 @@ fn test_submit_bounty_boundaries() {
             bounty_id_override: None,
             use_wrong_contributor: false,
             expire_before_submit: true,
-            expected: SubmitBountyExpected::Error(ContractError::BountyMustBeReserved),
+            expected: SubmitBountyExpected::Error(ContractError::BountyExpired),
         },
         SubmitBountyTestCase {
             name: "bounty in Reserved status but submitted by wrong contributor (contributor mismatch boundary)",
@@ -1173,7 +1223,7 @@ fn test_submit_bounty_boundaries() {
             contributor.clone()
         };
 
-        // `panic_error` panics with the variant's Debug name, so we capture the
+        // `panic_error` emits the variant's stable contract code, so we capture the
         // panic and assert the exact named `ContractError` variant.
         let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             client.submit_bounty(&bounty_id, &submit_caller);
@@ -1221,7 +1271,7 @@ fn test_submit_bounty_boundaries() {
                 } else {
                     std::string::String::new()
                 };
-                let expected_name = std::format!("{:?}", expected_err);
+                let expected_name = std::format!("Error(Contract, #{})", *expected_err as u32);
                 assert!(
                     msg.contains(&expected_name),
                     "case `{}`: expected error variant {} but panic was: {}",
@@ -1234,7 +1284,7 @@ fn test_submit_bounty_boundaries() {
     }
 }
 
-invalid_transition_test!(release_open, BountyStatus::Open, "BountyMustBeSubmitted", {
+invalid_transition_test!(release_open, BountyStatus::Open, "Error(Contract, #20)", {
     |client: &StellarBountyBoardContractClient<'static>,
      bounty_id: u64,
      maintainer: Address,
@@ -1243,7 +1293,7 @@ invalid_transition_test!(release_open, BountyStatus::Open, "BountyMustBeSubmitte
 invalid_transition_test!(
     release_reserved,
     BountyStatus::Reserved,
-    "BountyMustBeSubmitted",
+    "Error(Contract, #20)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1254,7 +1304,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     release_released,
     BountyStatus::Released,
-    "BountyMustBeSubmitted",
+    "Error(Contract, #20)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1265,7 +1315,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     release_refunded,
     BountyStatus::Refunded,
-    "BountyMustBeSubmitted",
+    "Error(Contract, #20)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1276,7 +1326,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     release_expired,
     BountyStatus::Expired,
-    "BountyMustBeSubmitted",
+    "Error(Contract, #20)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1287,7 +1337,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     release_disputed,
     BountyStatus::Disputed,
-    "BountyMustBeSubmitted",
+    "Error(Contract, #20)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1296,7 +1346,7 @@ invalid_transition_test!(
     }
 );
 
-invalid_transition_test!(refund_open, BountyStatus::Open, "BountyNotExpiredYet", {
+invalid_transition_test!(refund_open, BountyStatus::Open, "Error(Contract, #21)", {
     |client: &StellarBountyBoardContractClient<'static>,
      bounty_id: u64,
      maintainer: Address,
@@ -1305,7 +1355,7 @@ invalid_transition_test!(refund_open, BountyStatus::Open, "BountyNotExpiredYet",
 invalid_transition_test!(
     refund_reserved,
     BountyStatus::Reserved,
-    "BountyNotExpiredYet",
+    "Error(Contract, #21)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1316,7 +1366,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     refund_submitted,
     BountyStatus::Submitted,
-    "BountyNotExpiredYet",
+    "Error(Contract, #21)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1327,7 +1377,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     refund_released,
     BountyStatus::Released,
-    "BountyAlreadyFinalized",
+    "Error(Contract, #23)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1338,7 +1388,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     refund_refunded,
     BountyStatus::Refunded,
-    "BountyAlreadyFinalized",
+    "Error(Contract, #23)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1349,7 +1399,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     refund_disputed,
     BountyStatus::Disputed,
-    "BountyNotExpiredYet",
+    "Error(Contract, #21)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1361,7 +1411,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     extend_released,
     BountyStatus::Released,
-    "CannotExtendFinalizedBounty",
+    "Error(Contract, #24)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1374,7 +1424,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     extend_refunded,
     BountyStatus::Refunded,
-    "CannotExtendFinalizedBounty",
+    "Error(Contract, #24)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1387,7 +1437,7 @@ invalid_transition_test!(
 invalid_transition_test!(
     extend_expired,
     BountyStatus::Expired,
-    "CannotExtendFinalizedBounty",
+    "Error(Contract, #24)",
     {
         |client: &StellarBountyBoardContractClient<'static>,
          bounty_id: u64,
@@ -1399,7 +1449,7 @@ invalid_transition_test!(
 );
 
 #[test]
-#[should_panic(expected = "BountyNotOpen")]
+#[should_panic(expected = "Error(Contract, #3)")]
 fn test_concurrent_reservation_race_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1425,7 +1475,7 @@ fn test_concurrent_reservation_race_fails() {
 }
 
 #[test]
-#[should_panic(expected = "BountyMustBeSubmitted")]
+#[should_panic(expected = "Error(Contract, #20)")]
 fn test_release_without_submit() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1479,7 +1529,7 @@ fn test_expiration() {
 }
 
 #[test]
-#[should_panic(expected = "BountyNotOpen")]
+#[should_panic(expected = "Error(Contract, #3)")]
 fn test_double_reserve_bounty() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1511,7 +1561,7 @@ fn test_double_reserve_bounty() {
 }
 
 #[test]
-#[should_panic(expected = "BountyNotOpen")]
+#[should_panic(expected = "Error(Contract, #3)")]
 fn test_concurrent_reserve_two_contributors() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1558,7 +1608,7 @@ fn test_concurrent_reserve_two_contributors() {
 }
 
 #[test]
-#[should_panic(expected = "BountyNotOpen")]
+#[should_panic(expected = "Error(Contract, #22)")]
 fn test_reserve_expired_bounty() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1638,7 +1688,7 @@ fn test_arbiter_rotation_success() {
 }
 
 #[test]
-#[should_panic(expected = "TimelockNotElapsed")]
+#[should_panic(expected = "Error(Contract, #10)")]
 fn test_arbiter_rotation_timelock_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1655,7 +1705,7 @@ fn test_arbiter_rotation_timelock_fails() {
 }
 
 #[test]
-#[should_panic(expected = "MaintainerMismatch")]
+#[should_panic(expected = "Error(Contract, #25)")]
 fn test_extend_deadline_wrong_caller() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1684,7 +1734,7 @@ fn test_extend_deadline_wrong_caller() {
 }
 
 #[test]
-#[should_panic(expected = "DeadlineMustAdvance")]
+#[should_panic(expected = "Error(Contract, #14)")]
 fn test_extend_deadline_earlier() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1892,7 +1942,7 @@ fn test_create_bounty_without_override_uses_global_default() {
 }
 
 #[test]
-#[should_panic(expected = "DisputeWindowOverrideTooSmall")]
+#[should_panic(expected = "Error(Contract, #17)")]
 fn test_create_bounty_override_below_min_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1915,7 +1965,7 @@ fn test_create_bounty_override_below_min_fails() {
 }
 
 #[test]
-#[should_panic(expected = "DisputeWindowOverrideTooLarge")]
+#[should_panic(expected = "Error(Contract, #18)")]
 fn test_create_bounty_override_above_max_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -1938,7 +1988,7 @@ fn test_create_bounty_override_above_max_fails() {
 }
 
 #[test]
-#[should_panic(expected = "DisputeWindowNotMet")]
+#[should_panic(expected = "Error(Contract, #28)")]
 fn test_resolve_dispute_custom_window_not_met_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2134,7 +2184,7 @@ fn test_get_bounties_by_contributor_includes_released() {
 // ─── Double-refund after cancel_bounty test (#747) ────────────────────────
 
 #[test]
-#[should_panic(expected = "BountyAlreadyFinalized")]
+#[should_panic(expected = "Error(Contract, #23)")]
 fn test_double_refund_after_cancel_bounty() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2499,7 +2549,7 @@ fn test_upgrade_event_topic_symbols() {
 // ─── Release Bounty Boundary & Edge-Case Test Suite (Issue #1242) ───
 
 #[test]
-#[should_panic(expected = "BountyNotFound")]
+#[should_panic(expected = "Error(Contract, #2)")]
 fn test_release_bounty_boundary_nonexistent_id_zero() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2509,7 +2559,7 @@ fn test_release_bounty_boundary_nonexistent_id_zero() {
 }
 
 #[test]
-#[should_panic(expected = "BountyNotFound")]
+#[should_panic(expected = "Error(Contract, #2)")]
 fn test_release_bounty_boundary_nonexistent_id_arbitrary() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2519,7 +2569,7 @@ fn test_release_bounty_boundary_nonexistent_id_arbitrary() {
 }
 
 #[test]
-#[should_panic(expected = "BountyNotFound")]
+#[should_panic(expected = "Error(Contract, #2)")]
 fn test_release_bounty_boundary_nonexistent_id_max() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2529,7 +2579,7 @@ fn test_release_bounty_boundary_nonexistent_id_max() {
 }
 
 #[test]
-#[should_panic(expected = "MaintainerMismatch")]
+#[should_panic(expected = "Error(Contract, #25)")]
 fn test_release_bounty_boundary_caller_mismatch_random_address() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2553,7 +2603,7 @@ fn test_release_bounty_boundary_caller_mismatch_random_address() {
 }
 
 #[test]
-#[should_panic(expected = "MaintainerMismatch")]
+#[should_panic(expected = "Error(Contract, #25)")]
 fn test_release_bounty_boundary_caller_mismatch_contributor() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2576,7 +2626,7 @@ fn test_release_bounty_boundary_caller_mismatch_contributor() {
 }
 
 #[test]
-#[should_panic(expected = "MaintainerMismatch")]
+#[should_panic(expected = "Error(Contract, #25)")]
 fn test_release_bounty_boundary_caller_mismatch_admin() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2599,7 +2649,7 @@ fn test_release_bounty_boundary_caller_mismatch_admin() {
 }
 
 #[test]
-#[should_panic(expected = "MaintainerMismatch")]
+#[should_panic(expected = "Error(Contract, #25)")]
 fn test_release_bounty_boundary_caller_mismatch_arbiter() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2622,7 +2672,7 @@ fn test_release_bounty_boundary_caller_mismatch_arbiter() {
 }
 
 #[test]
-#[should_panic(expected = "BountyMustBeSubmitted")]
+#[should_panic(expected = "Error(Contract, #20)")]
 fn test_release_bounty_boundary_status_open() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2644,7 +2694,7 @@ fn test_release_bounty_boundary_status_open() {
 }
 
 #[test]
-#[should_panic(expected = "BountyMustBeSubmitted")]
+#[should_panic(expected = "Error(Contract, #20)")]
 fn test_release_bounty_boundary_status_reserved() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2666,7 +2716,7 @@ fn test_release_bounty_boundary_status_reserved() {
 }
 
 #[test]
-#[should_panic(expected = "BountyMustBeSubmitted")]
+#[should_panic(expected = "Error(Contract, #20)")]
 fn test_release_bounty_boundary_status_already_released() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2688,7 +2738,7 @@ fn test_release_bounty_boundary_status_already_released() {
 }
 
 #[test]
-#[should_panic(expected = "BountyMustBeSubmitted")]
+#[should_panic(expected = "Error(Contract, #20)")]
 fn test_release_bounty_boundary_status_refunded() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2710,7 +2760,7 @@ fn test_release_bounty_boundary_status_refunded() {
 }
 
 #[test]
-#[should_panic(expected = "BountyMustBeSubmitted")]
+#[should_panic(expected = "Error(Contract, #20)")]
 fn test_release_bounty_boundary_status_disputed() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2732,7 +2782,7 @@ fn test_release_bounty_boundary_status_disputed() {
 }
 
 #[test]
-#[should_panic(expected = "BountyMustBeSubmitted")]
+#[should_panic(expected = "Error(Contract, #20)")]
 fn test_release_bounty_boundary_status_expired() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2754,7 +2804,7 @@ fn test_release_bounty_boundary_status_expired() {
 }
 
 #[test]
-#[should_panic(expected = "FeeRecipientNotSet")]
+#[should_panic(expected = "Error(Contract, #15)")]
 fn test_release_bounty_boundary_missing_fee_recipient_when_fee_positive() {
     let env = Env::default();
     env.mock_all_auths();
@@ -2994,7 +3044,7 @@ fn test_release_bounty_boundary_min_amount_success() {
 }
 
 #[test]
-#[should_panic(expected = "BountyMustBeSubmitted")]
+#[should_panic(expected = "Error(Contract, #20)")]
 fn test_release_bounty_boundary_double_release_fails() {
     let env = Env::default();
     env.mock_all_auths();
@@ -3002,6 +3052,59 @@ fn test_release_bounty_boundary_double_release_fails() {
         setup_test(&env);
     let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
     token_admin.mint(&maintainer, &10_000);
+
+    // ─── create_bounty structured event (CrtEvent) ──────────────────────────
+
+    #[test]
+    fn test_create_bounty_emits_structured_event() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let (client, _admin, maintainer, _contributor, token_id, _fee_recipient, _arbiter) =
+            setup_test(&env);
+        let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+        token_admin.mint(&maintainer, &1000);
+
+        let deadline = env.ledger().timestamp() + 1000;
+        let bounty_id = client.create_bounty(
+            &maintainer,
+            &token_id,
+            &500,
+            &String::from_str(&env, "repo"),
+            &7,
+            &String::from_str(&env, "title"),
+            &deadline,
+            &250u32,
+            &Some(3600u64),
+        );
+
+        // The structured event is the last one emitted by this contract.
+        let events = env.events().all().filter_by_contract(&client.address);
+        let event = events.events().last().unwrap();
+        let soroban_sdk::xdr::ContractEventBody::V0(body) = &event.body;
+        let t0 = soroban_sdk::Symbol::from_val(&env, &body.topics[0]);
+        let t1 = soroban_sdk::Symbol::from_val(&env, &body.topics[1]);
+        assert_eq!(t0, symbol_short!("Bounty"));
+        assert_eq!(t1, symbol_short!("CrtEvent"));
+
+        let payload = BountyCreatedEvent::from_val(&env, &body.data);
+        assert_eq!(
+            payload,
+            BountyCreatedEvent {
+                bounty_id,
+                maintainer,
+                token: token_id,
+                amount: 500,
+                repo: String::from_str(&env, "repo"),
+                issue_number: 7,
+                title: String::from_str(&env, "title"),
+                deadline,
+                protocol_fee_bps: 250,
+                dispute_window_override: Some(3600),
+                created_at: env.ledger().timestamp(),
+            }
+        );
+    }
 
     let deadline = env.ledger().timestamp() + 1000;
     let bounty_id = client.create_bounty(
@@ -3022,4 +3125,728 @@ fn test_release_bounty_boundary_double_release_fails() {
 
     // Second call must fail because bounty is now Released, not Submitted
     client.release_bounty(&bounty_id, &maintainer);
+}
+
+// ─── get_bounty Boundary / Edge-Case Test Suite ─────────────────────────────
+//
+// Covers every boundary condition documented for `get_bounty`:
+//   • BountyNotFound  — nonexistent ID (id=0, large id, next id never written)
+//   • Expiry promotion — Open/Reserved past deadline → Expired (in-memory only)
+//   • No expiry on terminal statuses (Released, Refunded, Disputed, Submitted)
+//   • Happy-path fields — returned struct matches what was stored at creation
+//
+// Pattern mirrors the `test_submit_bounty_boundaries` table-driven suite above:
+// each case runs in its own isolated `Env` so ledger state never bleeds across.
+
+enum GetBountyExpected {
+    /// Call must succeed and the returned bounty's status must equal this.
+    Status(BountyStatus),
+    /// Call must panic with a message containing this `ContractError` variant name.
+    Error(ContractError),
+}
+
+struct GetBountyTestCase {
+    name: &'static str,
+    /// If `None`, no bounty is created and `bounty_id_override` is used directly.
+    setup_status: Option<BountyStatus>,
+    /// Override the ID passed to `get_bounty` (used for nonexistent-ID cases).
+    bounty_id_override: Option<u64>,
+    /// Advance ledger past the bounty's deadline before calling `get_bounty`.
+    advance_past_deadline: bool,
+    expected: GetBountyExpected,
+}
+
+#[test]
+fn test_get_bounty_boundaries() {
+    let test_cases = [
+        // ── Nonexistent-ID cases ────────────────────────────────────────────
+        GetBountyTestCase {
+            name: "id=0 is never a valid bounty (NextBountyId starts at 1)",
+            setup_status: None,
+            bounty_id_override: Some(0),
+            advance_past_deadline: false,
+            expected: GetBountyExpected::Error(ContractError::BountyNotFound),
+        },
+        GetBountyTestCase {
+            name: "large nonexistent id (999_999) returns BountyNotFound",
+            setup_status: None,
+            bounty_id_override: Some(999_999),
+            advance_past_deadline: false,
+            expected: GetBountyExpected::Error(ContractError::BountyNotFound),
+        },
+        GetBountyTestCase {
+            name: "id one past the only created bounty (next-id boundary) returns BountyNotFound",
+            setup_status: Some(BountyStatus::Open), // creates bounty_id=1
+            bounty_id_override: Some(2),            // ask for id=2 — never written
+            advance_past_deadline: false,
+            expected: GetBountyExpected::Error(ContractError::BountyNotFound),
+        },
+        // ── Open bounty, alive ───────────────────────────────────────────────
+        GetBountyTestCase {
+            name: "Open bounty before deadline returns Open",
+            setup_status: Some(BountyStatus::Open),
+            bounty_id_override: None,
+            advance_past_deadline: false,
+            expected: GetBountyExpected::Status(BountyStatus::Open),
+        },
+        // ── Expiry promotion: Open past deadline ─────────────────────────────
+        GetBountyTestCase {
+            name: "Open bounty past deadline is promoted to Expired (in-memory)",
+            setup_status: Some(BountyStatus::Open),
+            bounty_id_override: None,
+            advance_past_deadline: true,
+            expected: GetBountyExpected::Status(BountyStatus::Expired),
+        },
+        // ── Expiry promotion: Reserved past deadline ─────────────────────────
+        GetBountyTestCase {
+            name: "Reserved bounty past deadline is promoted to Expired (in-memory)",
+            setup_status: Some(BountyStatus::Reserved),
+            bounty_id_override: None,
+            advance_past_deadline: true,
+            expected: GetBountyExpected::Status(BountyStatus::Expired),
+        },
+        // ── Terminal statuses are NOT expired even past deadline ─────────────
+        GetBountyTestCase {
+            name: "Submitted bounty past deadline stays Submitted (no expiry on terminal)",
+            setup_status: Some(BountyStatus::Submitted),
+            bounty_id_override: None,
+            advance_past_deadline: true,
+            expected: GetBountyExpected::Status(BountyStatus::Submitted),
+        },
+        GetBountyTestCase {
+            name: "Released bounty past deadline stays Released (terminal, no expiry)",
+            setup_status: Some(BountyStatus::Released),
+            bounty_id_override: None,
+            advance_past_deadline: true,
+            expected: GetBountyExpected::Status(BountyStatus::Released),
+        },
+        GetBountyTestCase {
+            name: "Refunded bounty past deadline stays Refunded (terminal, no expiry)",
+            setup_status: Some(BountyStatus::Refunded),
+            bounty_id_override: None,
+            advance_past_deadline: true,
+            expected: GetBountyExpected::Status(BountyStatus::Refunded),
+        },
+        GetBountyTestCase {
+            name: "Disputed bounty past deadline stays Disputed (terminal, no expiry)",
+            setup_status: Some(BountyStatus::Disputed),
+            bounty_id_override: None,
+            advance_past_deadline: true,
+            expected: GetBountyExpected::Status(BountyStatus::Disputed),
+        },
+        // ── Reserved bounty before deadline ─────────────────────────────────
+        GetBountyTestCase {
+            name: "Reserved bounty before deadline returns Reserved",
+            setup_status: Some(BountyStatus::Reserved),
+            bounty_id_override: None,
+            advance_past_deadline: false,
+            expected: GetBountyExpected::Status(BountyStatus::Reserved),
+        },
+        // ── Happy-path: zero-amount boundary (minimum allowed) ───────────────
+        GetBountyTestCase {
+            name: "Open bounty at minimum amount (100 stroops) is retrievable",
+            setup_status: Some(BountyStatus::Open),
+            bounty_id_override: None,
+            advance_past_deadline: false,
+            expected: GetBountyExpected::Status(BountyStatus::Open),
+        },
+    ];
+
+    for tc in test_cases.iter() {
+        let env = Env::default();
+        env.mock_all_auths();
+
+        let (client, _admin, maintainer, contributor, token_id, _fee_recipient, arbiter) =
+            setup_test(&env);
+        let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+        token_admin.mint(&maintainer, &10_000);
+
+        // Build the bounty in the requested state (if any).
+        let created_id: Option<u64> = if tc.setup_status.is_some() {
+            Some(create_bounty_with_state(
+                &env,
+                &client,
+                maintainer.clone(),
+                contributor.clone(),
+                token_id.clone(),
+                tc.setup_status.unwrap(),
+                arbiter.clone(),
+            ))
+        } else {
+            None
+        };
+
+        // Determine which ID to query.
+        let query_id: u64 = match tc.bounty_id_override {
+            Some(id) => id,
+            None => created_id.expect("bounty_id_override required when setup_status is None"),
+        };
+
+        // Advance the ledger past the deadline when the case requires it.
+        if tc.advance_past_deadline {
+            if let Some(id) = created_id {
+                // Peek at the stored deadline without triggering expiry.
+                // We read it at the current timestamp (before advancing).
+                let bounty = client.get_bounty(&id);
+                env.ledger().set_timestamp(bounty.deadline + 1);
+            }
+        }
+
+        // Invoke `get_bounty` and capture success or panic.
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            client.get_bounty(&query_id)
+        }));
+
+        match &tc.expected {
+            GetBountyExpected::Status(expected_status) => {
+                let bounty = outcome.unwrap_or_else(|_| {
+                    panic!(
+                        "expected success ({expected_status:?}) but panicked for case: {}",
+                        tc.name
+                    )
+                });
+                assert_eq!(
+                    bounty.status, *expected_status,
+                    "case `{}`: wrong status",
+                    tc.name
+                );
+            }
+            GetBountyExpected::Error(expected_err) => {
+                let payload = match outcome {
+                    Ok(b) => panic!(
+                        "expected error {:?} but got status {:?} for case: {}",
+                        expected_err, b.status, tc.name
+                    ),
+                    Err(p) => p,
+                };
+                let msg = if let Some(s) = payload.downcast_ref::<std::string::String>() {
+                    s.clone()
+                } else if let Some(s) = payload.downcast_ref::<&str>() {
+                    std::string::String::from(*s)
+                } else {
+                    std::string::String::new()
+                };
+                let expected_name = std::format!("Error(Contract, #{})", *expected_err as u32);
+                assert!(
+                    msg.contains(&expected_name),
+                    "case `{}`: expected error variant `{}` but panic message was: `{}`",
+                    tc.name,
+                    expected_name,
+                    msg
+                );
+            }
+        }
+    }
+}
+
+// ── Individual named tests (snapshot-friendly, each asserting one boundary) ──
+//
+// These complement the table above: they are individually named so that `cargo
+// test` output and CI snapshots show exactly which boundary failed.
+
+#[test]
+#[should_panic(expected = "Error(Contract, #2)")]
+fn test_get_bounty_id_zero_not_found() {
+    let env = Env::default();
+    let (client, _, _, _, _, _, _) = setup_test(&env);
+    client.get_bounty(&0u64);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #2)")]
+fn test_get_bounty_large_nonexistent_id_not_found() {
+    let env = Env::default();
+    let (client, _, _, _, _, _, _) = setup_test(&env);
+    client.get_bounty(&u64::MAX);
+}
+
+#[test]
+fn test_get_bounty_open_before_deadline_returns_open() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin, maintainer, _contributor, token_id, _, _) = setup_test(&env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+    token_admin.mint(&maintainer, &1_000);
+
+    let bounty_id = client.create_bounty(
+        &maintainer,
+        &token_id,
+        &500,
+        &String::from_str(&env, "repo"),
+        &1,
+        &String::from_str(&env, "title"),
+        &(env.ledger().timestamp() + 1_000),
+        &0u32,
+        &None,
+    );
+
+    let bounty = client.get_bounty(&bounty_id);
+    assert_eq!(bounty.status, BountyStatus::Open);
+    // Verify stored fields are returned intact.
+    assert_eq!(bounty.amount, 500);
+    assert_eq!(bounty.issue_number, 1);
+    assert_eq!(bounty.maintainer, maintainer);
+    assert_eq!(bounty.contributor, None);
+}
+
+#[test]
+fn test_get_bounty_open_past_deadline_returns_expired() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin, maintainer, _contributor, token_id, _, _) = setup_test(&env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+    token_admin.mint(&maintainer, &1_000);
+
+    let deadline = env.ledger().timestamp() + 500;
+    let bounty_id = client.create_bounty(
+        &maintainer,
+        &token_id,
+        &500,
+        &String::from_str(&env, "repo"),
+        &1,
+        &String::from_str(&env, "title"),
+        &deadline,
+        &0u32,
+        &None,
+    );
+
+    // Advance ledger past deadline — expiry is triggered lazily by get_bounty.
+    env.ledger().set_timestamp(deadline + 1);
+
+    let bounty = client.get_bounty(&bounty_id);
+    assert_eq!(
+        bounty.status,
+        BountyStatus::Expired,
+        "Open bounty past deadline must be reported as Expired"
+    );
+}
+
+#[test]
+fn test_get_bounty_reserved_past_deadline_returns_expired() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin, maintainer, contributor, token_id, _, _arbiter) = setup_test(&env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+    token_admin.mint(&maintainer, &1_000);
+
+    let deadline = env.ledger().timestamp() + 500;
+    let bounty_id = client.create_bounty(
+        &maintainer,
+        &token_id,
+        &500,
+        &String::from_str(&env, "repo"),
+        &1,
+        &String::from_str(&env, "title"),
+        &deadline,
+        &0u32,
+        &None,
+    );
+    client.reserve_bounty(&bounty_id, &contributor);
+
+    env.ledger().set_timestamp(deadline + 1);
+
+    let bounty = client.get_bounty(&bounty_id);
+    assert_eq!(
+        bounty.status,
+        BountyStatus::Expired,
+        "Reserved bounty past deadline must be reported as Expired"
+    );
+    // Contributor is still stored even though status is now Expired.
+    assert_eq!(bounty.contributor, Some(contributor));
+}
+
+#[test]
+fn test_get_bounty_released_past_deadline_stays_released() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin, maintainer, contributor, token_id, _, _arbiter) = setup_test(&env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+    token_admin.mint(&maintainer, &1_000);
+
+    let deadline = env.ledger().timestamp() + 500;
+    let bounty_id = client.create_bounty(
+        &maintainer,
+        &token_id,
+        &500,
+        &String::from_str(&env, "repo"),
+        &1,
+        &String::from_str(&env, "title"),
+        &deadline,
+        &0u32,
+        &None,
+    );
+    client.reserve_bounty(&bounty_id, &contributor);
+    client.submit_bounty(&bounty_id, &contributor);
+    client.release_bounty(&bounty_id, &maintainer);
+
+    // Advance well past deadline — terminal status must not be overwritten.
+    env.ledger().set_timestamp(deadline + 10_000);
+
+    let bounty = client.get_bounty(&bounty_id);
+    assert_eq!(
+        bounty.status,
+        BountyStatus::Released,
+        "Released bounty must never be promoted to Expired"
+    );
+}
+
+#[test]
+fn test_get_bounty_refunded_past_deadline_stays_refunded() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin, maintainer, contributor, token_id, _, _arbiter) = setup_test(&env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+    token_admin.mint(&maintainer, &1_000);
+
+    let deadline = env.ledger().timestamp() + 500;
+    let bounty_id = client.create_bounty(
+        &maintainer,
+        &token_id,
+        &500,
+        &String::from_str(&env, "repo"),
+        &1,
+        &String::from_str(&env, "title"),
+        &deadline,
+        &0u32,
+        &None,
+    );
+    client.reserve_bounty(&bounty_id, &contributor);
+    env.ledger().set_timestamp(deadline + 1);
+    client.refund_bounty(&bounty_id, &maintainer);
+
+    env.ledger().set_timestamp(deadline + 10_000);
+
+    let bounty = client.get_bounty(&bounty_id);
+    assert_eq!(
+        bounty.status,
+        BountyStatus::Refunded,
+        "Refunded bounty must never be promoted to Expired"
+    );
+}
+
+#[test]
+fn test_get_bounty_disputed_past_deadline_stays_disputed() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin, maintainer, contributor, token_id, _, arbiter) = setup_test(&env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+    token_admin.mint(&maintainer, &1_000);
+
+    let deadline = env.ledger().timestamp() + 500;
+    let bounty_id = client.create_bounty(
+        &maintainer,
+        &token_id,
+        &500,
+        &String::from_str(&env, "repo"),
+        &1,
+        &String::from_str(&env, "title"),
+        &deadline,
+        &0u32,
+        &None,
+    );
+    client.reserve_bounty(&bounty_id, &contributor);
+    client.submit_bounty(&bounty_id, &contributor);
+    client.dispute_bounty(&bounty_id, &arbiter);
+
+    env.ledger().set_timestamp(deadline + 10_000);
+
+    let bounty = client.get_bounty(&bounty_id);
+    assert_eq!(
+        bounty.status,
+        BountyStatus::Disputed,
+        "Disputed bounty must never be promoted to Expired"
+    );
+}
+
+#[test]
+fn test_get_bounty_returns_correct_fields() {
+    // Validates that every field stored at creation is faithfully returned.
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin, maintainer, _contributor, token_id, _, _arbiter) = setup_test(&env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+    token_admin.mint(&maintainer, &10_000);
+
+    let repo = String::from_str(&env, "ritik4ever/stellar-bounty-board");
+    let title = String::from_str(&env, "Boundary test bounty");
+    let deadline = env.ledger().timestamp() + 2_000;
+    let amount = 1_234i128;
+    let issue_number = 42u32;
+    let fee_bps = 0u32;
+
+    let bounty_id = client.create_bounty(
+        &maintainer,
+        &token_id,
+        &amount,
+        &repo,
+        &issue_number,
+        &title,
+        &deadline,
+        &fee_bps,
+        &None,
+    );
+
+    let bounty = client.get_bounty(&bounty_id);
+    assert_eq!(bounty.maintainer, maintainer);
+    assert_eq!(bounty.token, token_id);
+    assert_eq!(bounty.amount, amount);
+    assert_eq!(bounty.repo, repo);
+    assert_eq!(bounty.issue_number, issue_number);
+    assert_eq!(bounty.title, title);
+    assert_eq!(bounty.deadline, deadline);
+    assert_eq!(bounty.status, BountyStatus::Open);
+    assert_eq!(bounty.protocol_fee_bps, fee_bps);
+    assert_eq!(bounty.contributor, None);
+    assert_eq!(bounty.dispute_raised_at, 0);
+    assert_eq!(bounty.dispute_window_override, None);
+}
+
+#[test]
+fn test_get_bounty_exactly_at_deadline_is_not_expired() {
+    // Boundary: timestamp == deadline  →  condition is `now > deadline`, so NOT expired.
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin, maintainer, _contributor, token_id, _, _) = setup_test(&env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+    token_admin.mint(&maintainer, &1_000);
+
+    let deadline = env.ledger().timestamp() + 500;
+    let bounty_id = client.create_bounty(
+        &maintainer,
+        &token_id,
+        &500,
+        &String::from_str(&env, "repo"),
+        &1,
+        &String::from_str(&env, "title"),
+        &deadline,
+        &0u32,
+        &None,
+    );
+
+    // Set ledger to exactly the deadline (not past it).
+    env.ledger().set_timestamp(deadline);
+
+    let bounty = client.get_bounty(&bounty_id);
+    assert_eq!(
+        bounty.status,
+        BountyStatus::Open,
+        "Bounty exactly AT its deadline must still be Open (expire_if_needed uses strict >)"
+    );
+}
+
+#[test]
+fn test_get_bounty_one_second_past_deadline_is_expired() {
+    // Off-by-one: deadline + 1 second must trigger expiry.
+    let env = Env::default();
+    env.mock_all_auths();
+    let (client, _admin, maintainer, _contributor, token_id, _, _) = setup_test(&env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(&env, &token_id);
+    token_admin.mint(&maintainer, &1_000);
+
+    let deadline = env.ledger().timestamp() + 500;
+    let bounty_id = client.create_bounty(
+        &maintainer,
+        &token_id,
+        &500,
+        &String::from_str(&env, "repo"),
+        &1,
+        &String::from_str(&env, "title"),
+        &deadline,
+        &0u32,
+        &None,
+    );
+
+    env.ledger().set_timestamp(deadline + 1);
+
+    let bounty = client.get_bounty(&bounty_id);
+    assert_eq!(
+        bounty.status,
+        BountyStatus::Expired,
+        "Bounty one second past deadline must be Expired"
+    );
+}
+
+// ─── release_bounty authorization ───────────────────────────────────────
+// `release_bounty` is maintainer-only. These tests pin both the
+// `require_auth()` signer check and the explicit `MaintainerMismatch` check.
+
+use soroban_sdk::testutils::{MockAuth, MockAuthInvoke};
+
+type ReleaseAuthFixture = (
+    StellarBountyBoardContractClient<'static>,
+    u64,
+    Address, // maintainer
+    Address, // contributor
+    Address, // token_id
+    Address, // admin
+    Address, // arbiter
+);
+
+/// Builds a Submitted bounty (setup runs under `mock_all_auths`; each test
+/// then overrides auth with `mock_auths` / `set_auths`).
+fn release_auth_fixture(env: &Env) -> ReleaseAuthFixture {
+    env.mock_all_auths();
+    let (client, admin, maintainer, contributor, token_id, _fee_recipient, arbiter) =
+        setup_test(env);
+    let token_admin = soroban_sdk::token::StellarAssetClient::new(env, &token_id);
+    token_admin.mint(&maintainer, &10_000);
+    let bounty_id = create_bounty_with_state(
+        env,
+        &client,
+        maintainer.clone(),
+        contributor.clone(),
+        token_id.clone(),
+        BountyStatus::Submitted,
+        arbiter.clone(),
+    );
+    (
+        client,
+        bounty_id,
+        maintainer,
+        contributor,
+        token_id,
+        admin,
+        arbiter,
+    )
+}
+
+/// Authorizes exactly `release_bounty(bounty_id, arg)` for `signer`.
+fn mock_release_auth(
+    env: &Env,
+    client: &StellarBountyBoardContractClient<'static>,
+    signer: &Address,
+    bounty_id: u64,
+    arg: &Address,
+) {
+    env.mock_auths(&[MockAuth {
+        address: signer,
+        invoke: &MockAuthInvoke {
+            contract: &client.address,
+            fn_name: "release_bounty",
+            args: (bounty_id, arg.clone()).into_val(env),
+            sub_invokes: &[],
+        },
+    }]);
+}
+
+#[test]
+fn test_release_bounty_auth_correct_maintainer_succeeds() {
+    let env = Env::default();
+    let (client, bounty_id, maintainer, contributor, token_id, _admin, _arbiter) =
+        release_auth_fixture(&env);
+
+    mock_release_auth(&env, &client, &maintainer, bounty_id, &maintainer);
+    client.release_bounty(&bounty_id, &maintainer);
+
+    assert_eq!(client.get_bounty(&bounty_id).status, BountyStatus::Released);
+    let token = soroban_sdk::token::TokenClient::new(&env, &token_id);
+    assert_eq!(token.balance(&contributor), 500);
+}
+
+#[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_release_bounty_auth_missing_signer_rejected() {
+    let env = Env::default();
+    let (client, bounty_id, maintainer, _contributor, _token_id, _admin, _arbiter) =
+        release_auth_fixture(&env);
+
+    // No authorization at all.
+    env.set_auths(&[]);
+    client.release_bounty(&bounty_id, &maintainer);
+}
+
+// Wrong signer: the maintainer address is passed as the argument, but a
+// different address signed. `maintainer.require_auth()` must fail.
+
+#[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_release_bounty_auth_wrong_signer_contributor_rejected() {
+    let env = Env::default();
+    let (client, bounty_id, maintainer, contributor, _token_id, _admin, _arbiter) =
+        release_auth_fixture(&env);
+
+    mock_release_auth(&env, &client, &contributor, bounty_id, &maintainer);
+    client.release_bounty(&bounty_id, &maintainer);
+}
+
+#[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_release_bounty_auth_wrong_signer_arbiter_rejected() {
+    let env = Env::default();
+    let (client, bounty_id, maintainer, _contributor, _token_id, _admin, arbiter) =
+        release_auth_fixture(&env);
+
+    mock_release_auth(&env, &client, &arbiter, bounty_id, &maintainer);
+    client.release_bounty(&bounty_id, &maintainer);
+}
+
+#[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_release_bounty_auth_wrong_signer_admin_rejected() {
+    let env = Env::default();
+    let (client, bounty_id, maintainer, _contributor, _token_id, admin, _arbiter) =
+        release_auth_fixture(&env);
+
+    mock_release_auth(&env, &client, &admin, bounty_id, &maintainer);
+    client.release_bounty(&bounty_id, &maintainer);
+}
+
+#[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_release_bounty_auth_wrong_signer_stranger_rejected() {
+    let env = Env::default();
+    let (client, bounty_id, maintainer, _contributor, _token_id, _admin, _arbiter) =
+        release_auth_fixture(&env);
+    let stranger = Address::generate(&env);
+
+    mock_release_auth(&env, &client, &stranger, bounty_id, &maintainer);
+    client.release_bounty(&bounty_id, &maintainer);
+}
+
+// Self-signed wrong caller: authorized for themselves but not the bounty's
+// maintainer, so the contract rejects with `MaintainerMismatch` (#25).
+
+#[test]
+#[should_panic(expected = "Error(Contract, #25)")]
+fn test_release_bounty_auth_self_signed_contributor_rejected() {
+    let env = Env::default();
+    let (client, bounty_id, _maintainer, contributor, _token_id, _admin, _arbiter) =
+        release_auth_fixture(&env);
+
+    mock_release_auth(&env, &client, &contributor, bounty_id, &contributor);
+    client.release_bounty(&bounty_id, &contributor);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #25)")]
+fn test_release_bounty_auth_self_signed_arbiter_rejected() {
+    let env = Env::default();
+    let (client, bounty_id, _maintainer, _contributor, _token_id, _admin, arbiter) =
+        release_auth_fixture(&env);
+
+    mock_release_auth(&env, &client, &arbiter, bounty_id, &arbiter);
+    client.release_bounty(&bounty_id, &arbiter);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #25)")]
+fn test_release_bounty_auth_self_signed_admin_rejected() {
+    let env = Env::default();
+    let (client, bounty_id, _maintainer, _contributor, _token_id, admin, _arbiter) =
+        release_auth_fixture(&env);
+
+    mock_release_auth(&env, &client, &admin, bounty_id, &admin);
+    client.release_bounty(&bounty_id, &admin);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #25)")]
+fn test_release_bounty_auth_self_signed_stranger_rejected() {
+    let env = Env::default();
+    let (client, bounty_id, _maintainer, _contributor, _token_id, _admin, _arbiter) =
+        release_auth_fixture(&env);
+    let stranger = Address::generate(&env);
+
+    mock_release_auth(&env, &client, &stranger, bounty_id, &stranger);
+    client.release_bounty(&bounty_id, &stranger);
 }

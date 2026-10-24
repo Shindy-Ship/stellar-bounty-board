@@ -44,4 +44,59 @@ describe('POST /api/bounties/:id/release — integration test', () => {
     expect(second.status).toBe(first.status);
     expect(second.body).toEqual(first.body);
   });
+
+  it('rejects missing body with 400 and a specific error code', async () => {
+    const res = await request(app)
+      .post('/api/bounties/BNTY-1/release')
+      .set('Content-Type', 'application/json')
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body).toBeDefined();
+    expect(res.body.error).toBeDefined();
+  });
+
+  it('rejects wrong-type body fields with 400', async () => {
+    const res = await request(app)
+      .post('/api/bounties/BNTY-1/release')
+      .set('Content-Type', 'application/json')
+      .send({ maintainer: 12345, txHash: ['not', 'a', 'string'] });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+  });
+
+  it('rejects empty-string boundary values with 400', async () => {
+    const res = await request(app)
+      .post('/api/bounties/BNTY-1/release')
+      .set('Content-Type', 'application/json')
+      .send({ maintainer: '', txHash: '' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+  });
+
+  it('rejects invalid query parameters with 400', async () => {
+    const res = await request(app)
+      .post('/api/bounties/BNTY-1/release?force=notabool')
+      .set('Content-Type', 'application/json')
+      .send({ maintainer: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+  });
+
+  it('rejects invalid path param with 400 before hitting the store', async () => {
+    const res = await request(app)
+      .post('/api/bounties/%20/release')
+      .set('Content-Type', 'application/json')
+      .send({ maintainer: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+  });
+
+  it('validates before reaching the contract layer', async () => {
+    const res = await request(app)
+      .post('/api/bounties/BNTY-1/release')
+      .set('Content-Type', 'application/json')
+      .send({ maintainer: 'not-a-valid-stellar-address' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+  });
 });

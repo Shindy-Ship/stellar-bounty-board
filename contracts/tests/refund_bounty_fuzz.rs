@@ -44,7 +44,9 @@ fn setup_fuzz_fixture() -> FuzzFixture {
     client.initialize(&admin, &treasury, &arbiter, &DISPUTE_WINDOW);
 
     let token_admin = Address::generate(&env);
-    let token = env.register_stellar_asset_contract_v2(token_admin).address();
+    let token = env
+        .register_stellar_asset_contract_v2(token_admin)
+        .address();
 
     FuzzFixture {
         env,
@@ -104,10 +106,10 @@ fn matches_documented_refund_error(err_str: &str) -> bool {
     // Contract panics with panic_error(ContractError::Variant) which the Soroban host
     // surfaces either as the named variant, InvokeError::Abort, or Error(Context, InvalidAction).
     let documented = [
-        "BountyNotFound",
-        "MaintainerMismatch",
-        "BountyAlreadyFinalized",
-        "BountyNotExpiredYet",
+        "Error(Contract, #2)",
+        "Error(Contract, #25)",
+        "Error(Contract, #23)",
+        "Error(Contract, #21)",
         "InvalidAction",
         "Abort",
     ];
@@ -158,7 +160,10 @@ fn test_fuzz_refund_bounty_numeric_inputs_and_invariants() {
         );
 
         let res2 = fix.client.try_refund_bounty(&id, &wrong_maintainer);
-        assert!(res2.is_err(), "Non-existent bounty ID with wrong caller should fail");
+        assert!(
+            res2.is_err(),
+            "Non-existent bounty ID with wrong caller should fail"
+        );
         let err2_str = format!("{:?}", res2);
         assert!(
             matches_documented_refund_error(&err2_str),
@@ -239,7 +244,10 @@ fn test_fuzz_refund_bounty_numeric_inputs_and_invariants() {
         // (b) Exact deadline boundary: timestamp == deadline must still fail
         fix.env.ledger().set_timestamp(deadline);
         let res_at = fix.client.try_refund_bounty(&bounty_id, &fix.maintainer);
-        assert!(res_at.is_err(), "Refund at timestamp == deadline must fail (not expired yet)");
+        assert!(
+            res_at.is_err(),
+            "Refund at timestamp == deadline must fail (not expired yet)"
+        );
         let err_at_str = format!("{:?}", res_at);
         assert!(matches_documented_refund_error(&err_at_str));
 
@@ -253,7 +261,11 @@ fn test_fuzz_refund_bounty_numeric_inputs_and_invariants() {
 
         // (d) Valid refund at deadline + 1: succeeds with 100% original amount refunded
         let res_refund = fix.client.try_refund_bounty(&bounty_id, &fix.maintainer);
-        assert!(res_refund.is_ok(), "Refund at deadline + 1 must succeed for amount {}", amount);
+        assert!(
+            res_refund.is_ok(),
+            "Refund at deadline + 1 must succeed for amount {}",
+            amount
+        );
 
         // Full amount restored to maintainer, contract escrow emptied
         assert_eq!(token_client.balance(&fix.maintainer), amount);
@@ -265,7 +277,10 @@ fn test_fuzz_refund_bounty_numeric_inputs_and_invariants() {
 
         // (e) Double refund invariant: immediately re-calling refund must fail with BountyAlreadyFinalized
         let res_double = fix.client.try_refund_bounty(&bounty_id, &fix.maintainer);
-        assert!(res_double.is_err(), "Double refund on already refunded bounty must fail");
+        assert!(
+            res_double.is_err(),
+            "Double refund on already refunded bounty must fail"
+        );
         let err_double_str = format!("{:?}", res_double);
         assert!(matches_documented_refund_error(&err_double_str));
     }
@@ -309,7 +324,11 @@ fn test_fuzz_refund_bounty_numeric_inputs_and_invariants() {
                 deadline
             );
             let b = fix.client.get_bounty(&bounty_id);
-            assert_eq!(b.status, BountyStatus::Open, "Status must remain Open on failed refund");
+            assert_eq!(
+                b.status,
+                BountyStatus::Open,
+                "Status must remain Open on failed refund"
+            );
             assert_eq!(token_client.balance(&fix.maintainer), 0);
             assert_eq!(token_client.balance(&fix.client.address), test_amount);
         } else {
@@ -366,7 +385,11 @@ fn test_fuzz_refund_bounty_numeric_inputs_and_invariants() {
         );
 
         let b = fix.client.get_bounty(&bounty_id);
-        assert_eq!(b.status, BountyStatus::Released, "Status must remain Released");
+        assert_eq!(
+            b.status,
+            BountyStatus::Released,
+            "Status must remain Released"
+        );
     }
 
     let _ = rng.next_i128(); // ensure all helper methods are exercised
